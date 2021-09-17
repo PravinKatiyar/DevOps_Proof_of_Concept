@@ -1,0 +1,50 @@
+pipeline {
+   
+     agent any
+     
+    stages {
+    
+        stage('Install') {
+          steps { 
+          bat 'npm install' }
+        }
+
+ 
+
+        stage('Build') {
+          steps { echo 'in build '
+                  bat "npm run build"
+                  }
+        }
+        
+        stage('war creation') {
+               steps{
+                    ws("C:/Windows/System32/config/systemprofile/AppData/Local/Jenkins/.jenkins/workspace/OnlineEducationSystemPipe/dist/OnlineEducationSystem"){    
+                        
+                        bat "jar -cvf OES.war *"
+                    }    
+                }
+          }
+
+ 
+
+     
+
+ 
+
+        stage('SonarQube analysis') {
+                steps{
+                        
+                        bat "npm run sonar"
+                }
+        }
+        stage('Deploy'){
+                steps {
+                        
+                    archiveArtifacts artifacts: 'dist/OnlineEducationSystem/*.war', followSymlinks: false
+                   deploy adapters: [tomcat9(credentialsId: 'tomcat', path: '', url: 'http://localhost:8080/')], contextPath: 'OnlineEducationSystem', war: 'dist\\OnlineEducationSystem\\OES.war'
+                
+                }
+        }
+  }
+}

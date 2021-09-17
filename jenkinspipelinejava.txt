@@ -1,0 +1,97 @@
+pipeline {
+    agent any
+    stages {
+        stage('Clean Stage') {
+            steps {
+                ws("C:/Idigital Training/Devops/Faculty"){
+                  bat "mvn clean"
+                }
+            }
+        }
+        stage('Install Stage') {
+      steps {
+        ws("C:/Idigital Training/Devops/Faculty") {
+          bat "mvn install"
+        }
+      }
+    }
+    stage('Compile Stage') {
+      steps {
+        ws("C:/Idigital Training/Devops/Faculty") {
+          bat "mvn compile"
+        }
+      }
+    }
+    stage('Test Stage') {
+      steps {
+        ws("C:/Idigital Training/Devops/Faculty") {
+          bat "mvn test"
+        }
+      }
+    }
+    stage('Package Stage') {
+      steps {
+        ws("C:/Idigital Training/Devops/Faculty") {
+          bat "mvn package"
+        }
+      }
+    }
+    stage('Testing') {
+      steps {
+        ws("C:/Idigital Training/Devops/Faculty") {
+          junit 'target/surefire-reports/*/.xml'
+        }
+      }
+    } 
+    stage('Test & Jacoco Static Analysis') {
+       
+steps {
+        ws("C:/Idigital Training/Devops/Faculty") {
+          junit 'target/surefire-reports/*/.xml'
+           jacoco()
+        }
+      }
+    } 
+   
+     stage('Nexus') {
+      steps {
+        ws("C:/Idigital Training/Devops/Faculty") {
+          nexusArtifactUploader artifacts: [[artifactId: 'Faculty', classifier: '', file: 'target/faculty.war', type: 'war']],
+          credentialsId: 'repositorynexus',
+          groupId: 'com.faculty',
+          nexusUrl: 'localhost:8081',
+          nexusVersion: 'nexus3',
+          protocol: 'http',
+          repository: 'maven-snapshots',
+          version: '0.0.1-SNAPSHOT'
+        }
+      }
+    }
+   stage ('Tomcat') {
+                steps{
+                ws("C:/Idigital Training/Devops/Faculty") {
+                deploy adapters: [tomcat9(credentialsId: 'apachetomcat1', path: '', url: 'http://localhost:8089')], contextPath:"faculty",war: 'target/faculty.war'
+                    }       
+                }
+                
+    }
+    stage ('Post declarative actions') {
+              steps{
+                echo "email sent"
+                  
+              }
+          }
+          
+     stage('Sonar Scanner Coverage'){
+				steps{
+					ws("C:/Idigital Training/Devops/Faculty") {             
+						bat "./mvnw sonar:sonar -Dsonar.login=7bdd6ced49509fdd0cf471f9105a0bf315e3c28a -Dsonar.host.url=http://localhost:9000" 
+					}
+				}
+			}
+
+ 
+
+          
+}
+}
